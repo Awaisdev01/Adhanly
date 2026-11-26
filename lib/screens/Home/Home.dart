@@ -1,0 +1,127 @@
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:adhanly/extensions.dart';
+import 'package:adhanly/prviders/dependencies/GlobalDependencyProvider.dart';
+import 'package:adhanly/prviders/locationProvider.dart';
+import 'package:adhanly/screens/Home/widgets/HomeContent.dart';
+import 'package:adhanly/screens/Home/widgets/menu.dart';
+import 'package:adhanly/theme.dart';
+import 'package:adhanly/widgets/AnimatedDrawer/constants/runtime_variables.dart';
+import 'package:adhanly/widgets/AnimatedDrawer/views/animated_drawer.dart';
+import 'package:provider/provider.dart';
+
+class Home extends StatefulWidget {
+  final LocationProvider _locationProvider;
+  final void Function(Widget, int)? onNavigate;
+  const Home(this._locationProvider, {this.onNavigate});
+
+  @override
+  State<Home> createState() => _HomeState();
+}
+
+class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
+  bool _isOpen = false;
+
+  Future _disableBatteryOptimization() async {
+    if (Platform.isAndroid) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        final appLocale = context.appLocale;
+        final globalDep = context.read<GlobalDependencyProvider>();
+
+        if (globalDep.needToShowDiableBatteryOptimizeDialog) {
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              title: Text(appLocale.disable_battery_optimization),
+              content: Text(appLocale.disable_battery_optimization_desc),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    context.pop();
+                    globalDep.ignoreBatteryOptimization(status: true);
+                  },
+                  child: Text(appLocale.bttn_okay),
+                ),
+                TextButton(
+                  onPressed: () {
+                    context.pop();
+                  },
+                  child: Text(appLocale.bttn_remind_me_later),
+                ),
+                TextButton(
+                  onPressed: () {
+                    context.pop();
+                    globalDep.setNeverAskDisableBatteryOptimize();
+                  },
+                  child: Text(
+                    appLocale.bttn_never_ask_again,
+                    style: const TextStyle(color: Colors.redAccent),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+      });
+    }
+  }
+
+  late final AnimationController _animationController;
+
+  @override
+  void initState() {
+    _disableBatteryOptimization().then((_) {});
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 450),
+    );
+    widget._locationProvider.updateLocationWithGPS(background: true);
+    super.initState();
+  }
+
+  void _toggleDrawer(String direction, [bool? open]) {
+    if(direction == 'rtl'){
+      return;
+    }
+    if (open != null || open != _isOpen) {
+      setState(() {
+        _isOpen = open ?? !_isOpen;
+      });
+      if (_isOpen) {
+        _animationController.forward();
+      } else {
+        _animationController.reverse();
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: AnimatedDrawer(
+          isOpen: _isOpen,
+          backgroundGradient: getOnBackgroundGradient(),
+          shadowColor: getDrawerShadowColor(),
+          menuPageContent: Menu(),
+          direction: DrawerDirection.left,
+          homePageContent: Container(
+            height: context.height,
+            width: context.width,
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: Stack(
+              children: [
+                HomeContent(_toggleDrawer, _animationController, onNavigate: widget.onNavigate,),
+                if (_isOpen)
+                  GestureDetector(
+                    onTap: () => _toggleDrawer(context.appLocale.text_direction),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

@@ -1,0 +1,58 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:adhanly/extensions.dart';
+import 'package:adhanly/models/dua/Dua.dart';
+import 'package:adhanly/prviders/duas_provider.dart';
+import 'package:adhanly/screens/dua/widgets/DuaRow.dart';
+import 'package:adhanly/widgets/coloredCOntainer.dart';
+import 'package:adhanly/widgets/loading.dart';
+import 'package:provider/provider.dart';
+
+class DuaListScreen extends StatelessWidget {
+  final int categoryID;
+  final String categoryTitle;
+
+  const DuaListScreen(this.categoryID, this.categoryTitle);
+
+  @override
+  Widget build(BuildContext context) {
+    final duaProvider = context.watch<DuaProvider>();
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(categoryTitle),
+      ),
+      body: FutureBuilder<List<Dua>>(
+        future: duaProvider.getDuasOfCategory(categoryID),
+        builder: (_, snapshot) {
+          if (snapshot.hasData) {
+            if (snapshot.data!.isNotEmpty){
+              return ListView.builder(
+                physics: const BouncingScrollPhysics(),
+                itemBuilder: (_, i) => Padding(
+                  padding:  EdgeInsets.only(top: i == 0 ? 16 : 0),
+                  child: DuaRow(snapshot.data![i]),
+                ),
+                itemCount: snapshot.data!.length,
+              );
+            } else{
+              return Center(
+                child: Container(
+                  width: 128,
+                  height: 128,
+                  decoration: BoxDecoration(
+                    color: getColoredContainerColor(context),
+                    borderRadius: BorderRadius.circular(context.width-32)
+                  ),
+                  child: SvgPicture.asset('assets/box.svg', width: 128, fit: BoxFit.fitWidth,),
+                ),
+              );
+            }
+          } else {
+            return const Loading();
+          }
+        },
+      ),
+    );
+  }
+}

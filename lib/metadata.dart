@@ -1,0 +1,3 @@
+const DB_VERSION = 4;
+const TOTAL_INSPIRATIONS = 3;
+
