@@ -112,6 +112,10 @@ This is a continuation of the open-source Minimal Adhan project; the upstream pr
 
 ---
 
+## 📬 Contact
+
+Open for work and business inquiries — **awaisdev5765@gmail.com**
+
 <div align="center">
 
 *May Allah accept it* 🤲
